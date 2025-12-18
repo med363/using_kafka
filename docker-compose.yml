@@ -5,3 +5,27 @@ services:
     container_name: broker
     ports:
       - "9092:9092"
+    environment:
+    # KRaft Build-in system of kafka v3.0 that it allow to mage its own metadata and kafka cluster coordination internally without zookeeper
+      KAFKA_KRAFT_MODE: 'true'
+#in general kafka is deigned to run as a cluster of multiple nodes,and these nodes are called kafka brokers(store and manage events(org topic and partitions)And these brokers handle these events from producers that are sending the data and consumers that are receiving the data), in production environment will have a kafka cluster with multiple brokers that work together instead of just one broker because you want to have fault tolerance and scalability and not just be dependent on one node , kafka in prod mode will be deployed as a cluster and that cluster has an ID basically al those brokers undemeath share and one of those brokers is going to have a role of Controller (managing the cluster metadata and coordination between brokers, tracking with broker is the leader for each partition and handling administrative operations like topic creation and deletion, reassigning partitions and managing broker failures, handling all the cluster administration tasks) and the other brokers will be followers that just handle the data storage and data transfer. At any given time only one broker can be the controller and the rest are followers, if the controller broker goes down one of the followers will be elected as the new controller automatically without any manual intervention
+      CLUSTER_ID: 'Lk0j3h7TR9m5xW8Pz6Q2Yg'
+      KAFKA_NODE_ID: '1'
+#telling kafka that this broker is going to have both roles of broker and controller, As broker it will handle data storage and transfer, and as controller it will manage the cluster metadata and coordination between brokers, And in KRaft mode a broker can have both roles simultaneously
+      KAFKA_PROCESS_ROLES: 'broker,controller'
+#wich brokers our controllers and can vote on important cluster decisions, in this case we have only one broker that is also the controller so we specify '1@localhost:9093' where '1' is the broker ID and 'broker:9093' is the address where the controller can be reached
+      KAFKA_CONTROLLER_QUORUM_VOTERS: '1@broker:9093'
+#set the replication factor to one , which is what we're going to do, this means that each topic partition will have only one copy and there won't be any redundancy or fault tolerance, this is suitable for development or testing environments where data durability is not a concern, but in production environments it's recommended to have a higher replication factor to ensure data availability and fault tolerance
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: '1'
+#listeners define the network interfaces and ports that kafka will use to communicate with clients and other brokers, in this case we have two listeners, one for regular client communication (PLAINTEXT://0.0.0.0:9092) and another for controller communication (CONTROLLER://0.0.0.0:9093)
+      KAFKA_LISTNERERS: 'PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093'
+#kafka advertised listeners are the addresses that kafka brokers will tell clients to use when they want to connect to the broker, in this case we're setting the advertised listener for PLAINTEXT to be 'PLAINTEXT://localhost:9092', which means that clients should connect to the broker using localhost on port 9092
+      KAFKA_ADVERTISED_LISTENERS: 'PLAINTEXT://localhost:9092'
+# kafka tell controllers which listener to use for controller communication, in this case we're specifying that the controller listener is 'CONTROLLER'
+      KAFKA_CONTROLLER_LISTENER_NAME: 'CONTROLLER'
+#tell kafka where to store its data on the broker, in this case we're using '/tmp/kraft-combined-logs' as the data directory inside the container
+      KAFKA_LOG_DIRS: '/tmp/kraft-combined-logs'
+    volumes:
+      - kafka_kraft:/var/lib/kafka/data
+volumes:
+  kafka_kraft:
