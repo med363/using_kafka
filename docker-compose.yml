@@ -2,9 +2,10 @@ version: '3.8'
 services:
   kafka:
     image: confluentinc/cp-kafka:7.8.6
-    container_name: broker
+    container_name: kafka
     ports:
       - "9092:9092"
+      - "9093:9093"
     environment:
     # KRaft Build-in system of kafka v3.0 that it allow to mage its own metadata and kafka cluster coordination internally without zookeeper
       KAFKA_KRAFT_MODE: 'true'
@@ -14,7 +15,7 @@ services:
 #telling kafka that this broker is going to have both roles of broker and controller, As broker it will handle data storage and transfer, and as controller it will manage the cluster metadata and coordination between brokers, And in KRaft mode a broker can have both roles simultaneously
       KAFKA_PROCESS_ROLES: 'broker,controller'
 #wich brokers our controllers and can vote on important cluster decisions, in this case we have only one broker that is also the controller so we specify '1@localhost:9093' where '1' is the broker ID and 'broker:9093' is the address where the controller can be reached
-      KAFKA_CONTROLLER_QUORUM_VOTERS: '1@broker:9093'
+      KAFKA_CONTROLLER_QUORUM_VOTERS: '1@kafka:9093'
 #set the replication factor to one , which is what we're going to do, this means that each topic partition will have only one copy and there won't be any redundancy or fault tolerance, this is suitable for development or testing environments where data durability is not a concern, but in production environments it's recommended to have a higher replication factor to ensure data availability and fault tolerance
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: '1'
 #listeners define the network interfaces and ports that kafka will use to communicate with clients and other brokers, in this case we have two listeners, one for regular client communication (PLAINTEXT://0.0.0.0:9092) and another for controller communication (CONTROLLER://0.0.0.0:9093)
