@@ -8,10 +8,14 @@ ProducerConfig = Producer({
 })
 # callback function to handle delivery reports
 def delivery_report(err, msg):
-    if err is not None:
+    if err :     
         print(f"Message delivery failed: {err}")
-    else:
+    else:   
         print(f"Message delivered to {msg.value().decode('utf-8')} ")
+#expect an event structure for an order
+        print(dir(msg))
+        #show topic name partition and offset where the message is stored
+        print(f"Message delivered to {msg.value().decode('utf-8')} on Topic: {msg.topic()}, Partition: {msg.partition()}, Offset: {msg.offset()}")
 #exple of event to be sent to Kafka topic
 event = {
     'order_id': str(uuid.uuid4()),
